@@ -1,46 +1,94 @@
-// แทนที่ฟังก์ชันอัปโหลดเดิมใน index.html
-const GITHUB_TOKEN = "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";
-const GITHUB_USERNAME = "weerapat-s";
-const REPO_NAME = "IE_NAS";
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAS Photo Sync</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen p-10">
+    <div class="max-w-xl mx-auto bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
+        <h1 class="text-2xl font-bold mb-6 text-blue-400 text-center">📸 NAS Photo Upload</h1>
+        
+        <div class="space-y-6">
+            <input type="file" id="photo-input" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer">
+            
+            <button id="upload-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-full font-bold shadow-lg transition-all active:scale-95">
+                Upload Photo
+            </button>
+        </div>
+    </div>
 
-uploadBtn.onclick = async () => {
-    const file = document.getElementById('photo-input').files[0];
-    if (!file) return alert("เลือกรูปก่อนครับ!");
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    uploadBtn.innerText = "กำลังส่งไป GitHub...";
-    
-    // 1. แปลงรูปเป็น Base64 (เพื่อให้ส่งผ่าน API ได้)
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = async () => {
-        const content = reader.result.split(',')[1];
-        const fileName = `photos/${Date.now()}_${file.name}`;
+        // Firebase Config (ดึงข้อมูลจากโปรเจกต์ของคุณ)
+        const firebaseConfig = {
+            apiKey: "AIzaSyA0-Sr2BDm0MGVFoxzgF6T9bcPNfF1yCgU",
+            authDomain: "ienas-cloud.firebaseapp.com",
+            databaseURL: "https://ienas-cloud-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ienas-cloud",
+            storageBucket: "ienas-cloud.firebasestorage.app",
+            messagingSenderId: "815356084214",
+            appId: "1:815356084214:web:64469dcc82dad071c851d7"
+        };
 
-        try {
-            // 2. ส่งรูปไป GitHub API
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${fileName}`, {
-                method: "PUT",
-                headers: {
-                    "Authorization": `token ${GITHUB_TOKEN}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    message: `Upload photo by 68030271: ${file.name}`,
-                    content: content
-                })
-            });
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-            if (res.ok) {
-                // 3. ส่งสัญญาณไป Firebase (เพื่อให้ NAS รู้ว่าต้อง Pull)
-                const newPhotoRef = push(ref(db, 'photos'));
-                await set(newPhotoRef, {
-                    fileName: fileName,
-                    status: "ready",
-                    time: Date.now()
-                });
-                alert("รูปขึ้น GitHub แล้ว! เดี๋ยว NAS จะดูดลงไปเองครับ");
-            }
-        } catch (e) { alert("Error: " + e.message); }
-        uploadBtn.innerText = "Upload Photo";
-    };
-};
+        // ข้อมูลที่ดึงมาจากหน้าจอของคุณ
+        const GITHUB_TOKEN = "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"; // ⚠️ เปลี่ยนใหม่หลังลบ Token เก่านะครับ
+        const GITHUB_USERNAME = "weerapat-s";
+        const REPO_NAME = "IE_NAS";
+        const uploadBtn = document.getElementById('upload-btn');
+
+        uploadBtn.onclick = async () => {
+            const file = document.getElementById('photo-input').files[0];
+            if (!file) return alert("กรุณาเลือกรูปก่อนครับ!");
+            
+            uploadBtn.innerText = "กำลังส่งไป GitHub...";
+            uploadBtn.disabled = true;
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const content = reader.result.split(',')[1];
+                const fileName = `photos/${Date.now()}_${file.name}`;
+
+                try {
+                    const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${fileName}`, {
+                        method: "PUT",
+                        headers: {
+                            "Authorization": `token ${GITHUB_TOKEN}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            message: `Upload photo by 68030271: ${file.name}`,
+                            content: content
+                        })
+                    });
+
+                    if (res.ok) {
+                        const newPhotoRef = push(ref(db, 'photos'));
+                        await set(newPhotoRef, {
+                            fileName: fileName,
+                            status: "ready",
+                            time: Date.now()
+                        });
+                        alert("อัปโหลดสำเร็จ! รูปขึ้น GitHub เรียบร้อยครับ");
+                    } else {
+                        const err = await res.json();
+                        alert("เกิดข้อผิดพลาด: " + err.message);
+                    }
+                } catch (e) { 
+                    alert("Error: " + e.message); 
+                } finally {
+                    uploadBtn.innerText = "Upload Photo";
+                    uploadBtn.disabled = false;
+                }
+            };
+        };
+    </script>
+</body>
+</html>
