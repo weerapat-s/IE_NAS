@@ -1,0 +1,26 @@
+name: Node.js CD (Auto Deploy to NAS)
+
+# 🚀 ทำงานทุกครั้งที่มีการ Push ไปที่กิ่ง main
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    # 🏠 สั่งให้รันบนเครื่อง Precision 5810 ของเรา (Self-hosted)
+    runs-on: self-hosted
+
+    steps:
+      # 1️⃣ ดึงโค้ดเวอร์ชันล่าสุดจาก GitHub ลงมาที่เครื่อง
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2️⃣ ติดตั้ง Library ที่อาจจะเพิ่มมาใหม่ (npm install)
+      - name: Install Dependencies
+        run: npm install
+
+      # 3️⃣ สั่งให้ PM2 รีสตาร์ทสคริปต์เพื่อใช้โค้ดใหม่ทันที
+      - name: Restart Monitoring Script
+        run: |
+          pm2 restart nas-firebase || pm2 start app.js --name "nas-firebase"
+          pm2 save
