@@ -1,85 +1,441 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PRECISION 5810 MONITOR</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+    <title>PRECISION 5810</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .glass-panel { background-color: #1e293b; border-radius: 0.75rem; border: 1px solid #334155; padding: 1.5rem; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --border: #1f1f1f;
+            --border-hover: #2e2e2e;
+            --text-primary: #f0f0f0;
+            --text-secondary: #5a5a5a;
+            --text-muted: #333;
+            --accent: #e8ff47;
+            --accent-dim: rgba(232, 255, 71, 0.08);
+            --accent-dim2: rgba(232, 255, 71, 0.15);
+            --green: #39e58c;
+            --blue: #5b9cf6;
+            --red: #ff5e5e;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--bg);
+            color: var(--text-primary);
+            font-family: 'DM Mono', monospace;
+            min-height: 100vh;
+            padding: 48px 32px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* ─── HEADER ─── */
+        .header {
+            margin-bottom: 56px;
+            animation: fadeUp 0.6s ease both;
+        }
+        .header-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .sys-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.18em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(26px, 5vw, 42px);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+        .title span { color: var(--accent); }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: 1px solid #1e3320;
+            color: var(--green);
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            padding: 5px 12px;
+            border-radius: 100px;
+            text-transform: uppercase;
+            margin-top: 16px;
+        }
+        .status-pill::before {
+            content: '';
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 0.08em;
+            margin-top: 4px;
+        }
+
+        /* ─── STATS GRID ─── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 48px;
+            animation: fadeUp 0.6s 0.1s ease both;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 28px 24px;
+            position: relative;
+            overflow: hidden;
+            transition: background 0.25s;
+        }
+        .stat-card:hover { background: #151515; }
+        .stat-card + .stat-card { border-left: 1px solid var(--border); }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+        }
+        .stat-card.blue::after { background: var(--blue); }
+        .stat-card.green::after { background: var(--green); }
+        .stat-card.yellow::after { background: var(--accent); }
+
+        .stat-label {
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .stat-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 16px;
+        }
+        .stat-card.blue .stat-value { color: var(--blue); }
+        .stat-card.green .stat-value { color: var(--green); }
+        .stat-card.yellow .stat-value { color: var(--accent); }
+
+        .stat-bar {
+            width: 100%;
+            height: 2px;
+            background: var(--border);
+            border-radius: 2px;
+        }
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .stat-card.blue .stat-bar-fill { background: var(--blue); }
+        .stat-card.green .stat-bar-fill { background: var(--green); }
+        .stat-card.yellow .stat-bar-fill { background: var(--accent); }
+
+        /* ─── UPLOADER ─── */
+        .uploader-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            animation: fadeUp 0.6s 0.2s ease both;
+        }
+
+        .card-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .card-icon {
+            width: 32px; height: 32px;
+            background: var(--accent-dim);
+            border: 1px solid rgba(232,255,71,0.2);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px;
+        }
+        .card-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+        .card-sub {
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+        }
+
+        .card-body { padding: 28px; }
+
+        /* ─── FOLDER LIST ─── */
+        .folder-section-label {
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        #folderContainer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 44px;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        #folderContainer label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 12px;
+            letter-spacing: 0.05em;
+            padding: 7px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            font-family: 'DM Mono', monospace;
+        }
+        #folderContainer label:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+            background: #161616;
+        }
+        #folderContainer input[type="checkbox"]:checked + span,
+        #folderContainer label:has(input:checked) {
+            border-color: rgba(232,255,71,0.4) !important;
+            background: var(--accent-dim) !important;
+            color: var(--accent) !important;
+        }
+        #folderContainer input[type="checkbox"] {
+            width: 12px; height: 12px;
+            accent-color: var(--accent);
+        }
+
+        .loading-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 0.08em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ─── UPLOAD ROW ─── */
+        .upload-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-choose {
+            background: transparent;
+            border: 1px solid var(--border-hover);
+            color: var(--text-secondary);
+            padding: 10px 18px;
+            border-radius: 6px;
+        }
+        .btn-choose:hover {
+            border-color: #3a3a3a;
+            color: var(--text-primary);
+        }
+        .btn-upload {
+            background: var(--accent);
+            color: #0a0a0a;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-weight: 500;
+            margin-left: auto;
+        }
+        .btn-upload:hover {
+            background: #d4e840;
+            transform: translateY(-1px);
+        }
+        .btn-upload:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .file-display {
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            letter-spacing: 0.04em;
+        }
+        .file-display.has-file { color: var(--accent); }
+
+        /* ─── STATUS ─── */
+        #statusText {
+            margin-top: 20px;
+            padding: 14px 20px;
+            background: rgba(91, 156, 246, 0.06);
+            border: 1px solid rgba(91, 156, 246, 0.15);
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--blue);
+            letter-spacing: 0.08em;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        #statusText.visible { display: flex; }
+
+        .spinner {
+            width: 12px; height: 12px;
+            border: 1.5px solid rgba(91,156,246,0.3);
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── DIVIDER ─── */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 24px 0;
+        }
+
+        /* ─── ANIMATIONS ─── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 600px) {
+            body { padding: 28px 20px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .stat-card + .stat-card { border-left: none; border-top: 1px solid var(--border); }
+            .stat-value { font-size: 28px; }
+            .upload-row { flex-direction: column; align-items: stretch; }
+            .btn-upload { margin-left: 0; text-align: center; }
+        }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body>
 
-    <div class="mb-8">
-        <h1 class="text-3xl md:text-4xl font-bold text-teal-400 tracking-wide">
-            <i class="fas fa-server mr-2"></i>PRECISION 5810 MONITOR
-        </h1>
-        <p class="text-gray-400 mt-2 text-sm md:text-base">Student ID: 68030271 | KMITL Computer Tech</p>
-        <div class="mt-3">
-            <span class="px-3 py-1 bg-teal-900 text-teal-300 rounded-full text-xs border border-teal-500 font-semibold tracking-wider">
-                NAS Online
-            </span>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="glass-panel border-t-4 border-t-blue-500">
-            <h3 class="text-xs text-gray-500 mb-2 font-bold tracking-wider">CPU USAGE</h3>
-            <div class="text-4xl font-bold text-white mb-4">14.95%</div>
-            <div class="w-full bg-slate-700 h-1.5 rounded-full"><div class="bg-blue-500 h-1.5 rounded-full" style="width: 15%"></div></div>
-        </div>
-        <div class="glass-panel border-t-4 border-t-green-500">
-            <h3 class="text-xs text-gray-500 mb-2 font-bold tracking-wider">FREE MEMORY</h3>
-            <div class="text-4xl font-bold text-white mb-4">83.97%</div>
-            <div class="w-full bg-slate-700 h-1.5 rounded-full"><div class="bg-green-500 h-1.5 rounded-full" style="width: 84%"></div></div>
-        </div>
-        <div class="glass-panel border-t-4 border-t-yellow-500">
-            <h3 class="text-xs text-gray-500 mb-2 font-bold tracking-wider">SYSTEM UPTIME (HR)</h3>
-            <div class="text-4xl font-bold text-white mb-4">2.22</div>
-            <div class="text-xs text-gray-600 italic">Precision Tower 5810 Status</div>
-        </div>
-    </div>
-
-    <div class="glass-panel border border-slate-700">
-        <div class="flex items-center mb-6">
-            <div class="bg-blue-600 p-2 rounded text-white mr-3">
-                <i class="fas fa-images"></i>
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-top">
+            <div>
+                <div class="sys-label">System Monitor</div>
+                <h1 class="title">PRECISION <span>5810</span></h1>
+                <div class="meta">68030271 · KMITL Computer Technology</div>
+                <div class="status-pill">NAS Online</div>
             </div>
-            <h2 class="text-xl font-bold text-white">Smart NAS Uploader</h2>
         </div>
-        
-        <div class="mb-5">
-            <label class="block text-gray-400 text-sm font-bold mb-3">
-                เลือกโฟลเดอร์ปลายทางใน NAS (เลือกได้มากกว่า 1 โฟลเดอร์):
-            </label>
-            <div id="folderContainer" class="flex flex-wrap gap-3 p-4 bg-slate-800 border border-slate-600 rounded-lg min-h-[60px]">
-                <span class="text-gray-500 text-sm flex items-center">
-                    <i class="fas fa-spinner fa-spin mr-2"></i> กำลังดึงข้อมูลโฟลเดอร์จาก NAS...
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-label">CPU Usage</div>
+            <div class="stat-value">14.95<span style="font-size:18px;font-weight:400;color:#3a3a3a">%</span></div>
+            <div class="stat-bar"><div class="stat-bar-fill" style="width: 0%" data-width="15%"></div></div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-label">Free Memory</div>
+            <div class="stat-value">83.97<span style="font-size:18px;font-weight:400;color:#3a3a3a">%</span></div>
+            <div class="stat-bar"><div class="stat-bar-fill" style="width: 0%" data-width="84%"></div></div>
+        </div>
+        <div class="stat-card yellow">
+            <div class="stat-label">Uptime (hr)</div>
+            <div class="stat-value">2.22<span style="font-size:18px;font-weight:400;color:#3a3a3a">h</span></div>
+            <div class="stat-bar"><div class="stat-bar-fill" style="width: 0%" data-width="22%"></div></div>
+        </div>
+    </div>
+
+    <!-- UPLOADER CARD -->
+    <div class="uploader-card">
+        <div class="card-header">
+            <div class="card-icon">⬆</div>
+            <div>
+                <div class="card-title">Smart NAS Uploader</div>
+                <div class="card-sub">Firebase Realtime Database</div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="folder-section-label">เลือกโฟลเดอร์ปลายทาง</div>
+            <div id="folderContainer">
+                <span class="loading-text">
+                    <span class="spinner"></span>
+                    กำลังดึงข้อมูลโฟลเดอร์...
                 </span>
             </div>
-        </div>
 
-        <div class="bg-slate-800 border border-slate-700 rounded-lg p-2 md:p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <input type="file" id="photoInput" accept="image/*" multiple class="hidden">
-            
-            <div class="flex items-center w-full gap-4">
-                <button id="chooseBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full font-semibold transition text-sm whitespace-nowrap">
-                    เลือกรูปภาพ
-                </button>
-                <span id="fileNameDisplay" class="text-gray-400 text-sm truncate flex-1">ยังไม่ได้เลือกไฟล์...</span>
+            <div class="divider"></div>
+
+            <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
+            <div class="upload-row">
+                <button class="btn btn-choose" id="chooseBtn">เลือกรูปภาพ</button>
+                <span class="file-display" id="fileNameDisplay">ยังไม่ได้เลือกไฟล์</span>
+                <button class="btn btn-upload" id="uploadBtn">Upload →</button>
             </div>
-            
-            <button id="uploadBtn" class="w-full md:w-auto bg-green-500 hover:bg-green-600 text-white px-8 py-2 rounded-full font-bold transition whitespace-nowrap">
-                Upload to NAS
-            </button>
-        </div>
 
-        <div id="statusText" class="mt-6 text-center text-sm text-blue-400 hidden font-bold">
-            <i class="fas fa-spinner fa-spin mr-2"></i><span id="progressCount">กำลังเตรียมส่งรูป...</span>
+            <div id="statusText">
+                <span class="spinner" style="border-color:rgba(91,156,246,0.3);border-top-color:var(--blue)"></span>
+                <span id="progressCount">กำลังเตรียมส่งรูป...</span>
+            </div>
         </div>
     </div>
 
@@ -87,7 +443,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-        // Firebase Config ของโปรเจกต์
         const firebaseConfig = {
             apiKey: "AIzaSyA0-Sr2BDm0MGVFoxzgF6T9bcPNfF1yCgU",
             authDomain: "ienas-cloud.firebaseapp.com",
@@ -98,7 +453,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // ดึง Element จาก HTML
         const folderContainer = document.getElementById('folderContainer');
         const fileInput = document.getElementById('photoInput');
         const chooseBtn = document.getElementById('chooseBtn');
@@ -107,107 +461,89 @@
         const statusText = document.getElementById('statusText');
         const progressCount = document.getElementById('progressCount');
 
-        // 🌟 1. รับข้อมูลรายชื่อโฟลเดอร์จาก NAS มาสร้างเป็น Checkbox
+        // Animate stat bars on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.querySelectorAll('.stat-bar-fill').forEach(bar => {
+                    bar.style.width = bar.dataset.width;
+                });
+            }, 400);
+        });
+
+        // Folder list
         onValue(ref(db, 'folderList'), (snapshot) => {
-            let folders = snapshot.val(); 
-            
+            let folders = snapshot.val();
             if (folders) {
-                folderContainer.innerHTML = ''; // เคลียร์ของเก่า
-                
-                // แปลงข้อมูลให้เป็น Array เสมอ (ป้องกัน Error จาก Firebase)
-                if (!Array.isArray(folders)) {
-                    folders = Object.values(folders);
-                }
-                
+                folderContainer.innerHTML = '';
+                if (!Array.isArray(folders)) folders = Object.values(folders);
                 folders.forEach(folder => {
                     const label = document.createElement('label');
-                    label.className = "flex items-center gap-2 bg-slate-700 px-4 py-2 rounded-md cursor-pointer hover:bg-slate-600 transition border border-slate-500 text-white text-sm select-none shadow-sm";
-                    
                     const checkbox = document.createElement('input');
-                    checkbox.type = "checkbox";
+                    checkbox.type = 'checkbox';
                     checkbox.value = folder;
-                    checkbox.className = "folder-checkbox w-4 h-4 text-blue-500 bg-slate-900 border-slate-600 rounded";
-                    
-                    // เลือกโฟลเดอร์ General ไว้ให้ก่อน
-                    if(folder === 'General') checkbox.checked = true;
-
+                    checkbox.className = 'folder-checkbox';
+                    if (folder === 'General') checkbox.checked = true;
+                    const span = document.createElement('span');
+                    span.textContent = `📁 ${folder}`;
                     label.appendChild(checkbox);
-                    label.appendChild(document.createTextNode(` 📁 ${folder}`));
+                    label.appendChild(span);
                     folderContainer.appendChild(label);
                 });
             } else {
-                folderContainer.innerHTML = '<span class="text-gray-500 text-sm">ไม่พบโฟลเดอร์ใน NAS หรือ NAS กำลังปิดอยู่</span>';
+                folderContainer.innerHTML = '<span class="loading-text" style="color:#3a3a3a">ไม่พบโฟลเดอร์ใน NAS</span>';
             }
         });
 
-        // 🌟 2. จัดการปุ่มเลือกไฟล์
         chooseBtn.addEventListener('click', () => fileInput.click());
-
         fileInput.addEventListener('change', () => {
-            const fileCount = fileInput.files.length;
-            if (fileCount > 0) {
-                fileNameDisplay.textContent = `เลือกแล้ว ${fileCount} ไฟล์ (พร้อมอัปโหลด)`;
+            const count = fileInput.files.length;
+            if (count > 0) {
+                fileNameDisplay.textContent = `เลือกแล้ว ${count} ไฟล์`;
+                fileNameDisplay.classList.add('has-file');
             } else {
-                fileNameDisplay.textContent = "ยังไม่ได้เลือกไฟล์...";
+                fileNameDisplay.textContent = 'ยังไม่ได้เลือกไฟล์';
+                fileNameDisplay.classList.remove('has-file');
             }
         });
 
-        // 🌟 3. จัดการตอนกดปุ่ม Upload
         uploadBtn.addEventListener('click', async () => {
             const files = fileInput.files;
             const selectedFolders = Array.from(document.querySelectorAll('.folder-checkbox:checked')).map(cb => cb.value);
-            
-            if (files.length === 0) {
-                alert("กรุณาเลือกรูปก่อนครับ!");
-                return;
-            }
-            if (selectedFolders.length === 0) {
-                alert("กรุณาติ๊กเลือกโฟลเดอร์ปลายทางอย่างน้อย 1 โฟลเดอร์ครับ!");
-                return;
-            }
 
-            statusText.classList.remove('hidden');
+            if (files.length === 0) { alert('กรุณาเลือกรูปก่อนครับ!'); return; }
+            if (selectedFolders.length === 0) { alert('กรุณาเลือกโฟลเดอร์ปลายทางก่อนครับ!'); return; }
+
+            statusText.classList.add('visible');
             uploadBtn.disabled = true;
-            uploadBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
             let successCount = 0;
-
-            // วนลูปส่งทีละรูป
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                progressCount.textContent = `กำลังอัปโหลดรูปที่ ${i + 1}/${files.length} ...`;
-
+                progressCount.textContent = `กำลังอัปโหลดรูปที่ ${i + 1} / ${files.length}`;
                 try {
                     const base64String = await new Promise((resolve) => {
                         const reader = new FileReader();
                         reader.onload = (e) => resolve(e.target.result);
                         reader.readAsDataURL(file);
                     });
-
-                    const fileName = `upload_${Date.now()}_${file.name}`;
                     const newPhotoRef = push(ref(db, 'photos'));
-                    
                     await set(newPhotoRef, {
-                        fileName: fileName,
+                        fileName: `upload_${Date.now()}_${file.name}`,
                         base64: base64String,
-                        targetFolders: selectedFolders, // ส่งชื่อโฟลเดอร์ไปเป็น Array
+                        targetFolders: selectedFolders,
                         timestamp: Date.now()
                     });
-                    
                     successCount++;
-                } catch (error) {
-                    console.error("❌ Error ส่งรูป:", error);
-                }
+                } catch (e) { console.error(e); }
             }
 
-            statusText.classList.add('hidden');
+            statusText.classList.remove('visible');
             uploadBtn.disabled = false;
-            uploadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            
             if (successCount === files.length) {
-                alert(`✅ ส่ง ${successCount} รูป ไปยังโฟลเดอร์ [${selectedFolders.join(', ')}] สำเร็จแล้วครับ!`);
-                fileInput.value = "";
-                fileNameDisplay.textContent = "ยังไม่ได้เลือกไฟล์...";
+                alert(`✅ ส่ง ${successCount} รูป → [${selectedFolders.join(', ')}] สำเร็จ!`);
+                fileInput.value = '';
+                fileNameDisplay.textContent = 'ยังไม่ได้เลือกไฟล์';
+                fileNameDisplay.classList.remove('has-file');
             }
         });
     </script>
