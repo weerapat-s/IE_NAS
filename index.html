@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IE_NAS MONITO</title>
+    <title>PRECISION 5810 MONITOR</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -16,7 +16,7 @@
 
     <div class="mb-8">
         <h1 class="text-3xl md:text-4xl font-bold text-teal-400 tracking-wide">
-            <i class="fas fa-server mr-2"></i>IE_NAS MONITO
+            <i class="fas fa-server mr-2"></i>PRECISION 5810 MONITOR
         </h1>
         <p class="text-gray-400 mt-2 text-sm md:text-base">Student ID: 68030271 | KMITL Computer Tech</p>
         <div class="mt-3">
@@ -85,4 +85,131 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, push
+        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // Firebase Config ของโปรเจกต์
+        const firebaseConfig = {
+            apiKey: "AIzaSyA0-Sr2BDm0MGVFoxzgF6T9bcPNfF1yCgU",
+            authDomain: "ienas-cloud.firebaseapp.com",
+            databaseURL: "https://ienas-cloud-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ienas-cloud"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // ดึง Element จาก HTML
+        const folderContainer = document.getElementById('folderContainer');
+        const fileInput = document.getElementById('photoInput');
+        const chooseBtn = document.getElementById('chooseBtn');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const statusText = document.getElementById('statusText');
+        const progressCount = document.getElementById('progressCount');
+
+        // 🌟 1. รับข้อมูลรายชื่อโฟลเดอร์จาก NAS มาสร้างเป็น Checkbox
+        onValue(ref(db, 'folderList'), (snapshot) => {
+            let folders = snapshot.val(); 
+            
+            if (folders) {
+                folderContainer.innerHTML = ''; // เคลียร์ของเก่า
+                
+                // แปลงข้อมูลให้เป็น Array เสมอ (ป้องกัน Error จาก Firebase)
+                if (!Array.isArray(folders)) {
+                    folders = Object.values(folders);
+                }
+                
+                folders.forEach(folder => {
+                    const label = document.createElement('label');
+                    label.className = "flex items-center gap-2 bg-slate-700 px-4 py-2 rounded-md cursor-pointer hover:bg-slate-600 transition border border-slate-500 text-white text-sm select-none shadow-sm";
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = "checkbox";
+                    checkbox.value = folder;
+                    checkbox.className = "folder-checkbox w-4 h-4 text-blue-500 bg-slate-900 border-slate-600 rounded";
+                    
+                    // เลือกโฟลเดอร์ General ไว้ให้ก่อน
+                    if(folder === 'General') checkbox.checked = true;
+
+                    label.appendChild(checkbox);
+                    label.appendChild(document.createTextNode(` 📁 ${folder}`));
+                    folderContainer.appendChild(label);
+                });
+            } else {
+                folderContainer.innerHTML = '<span class="text-gray-500 text-sm">ไม่พบโฟลเดอร์ใน NAS หรือ NAS กำลังปิดอยู่</span>';
+            }
+        });
+
+        // 🌟 2. จัดการปุ่มเลือกไฟล์
+        chooseBtn.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', () => {
+            const fileCount = fileInput.files.length;
+            if (fileCount > 0) {
+                fileNameDisplay.textContent = `เลือกแล้ว ${fileCount} ไฟล์ (พร้อมอัปโหลด)`;
+            } else {
+                fileNameDisplay.textContent = "ยังไม่ได้เลือกไฟล์...";
+            }
+        });
+
+        // 🌟 3. จัดการตอนกดปุ่ม Upload
+        uploadBtn.addEventListener('click', async () => {
+            const files = fileInput.files;
+            const selectedFolders = Array.from(document.querySelectorAll('.folder-checkbox:checked')).map(cb => cb.value);
+            
+            if (files.length === 0) {
+                alert("กรุณาเลือกรูปก่อนครับ!");
+                return;
+            }
+            if (selectedFolders.length === 0) {
+                alert("กรุณาติ๊กเลือกโฟลเดอร์ปลายทางอย่างน้อย 1 โฟลเดอร์ครับ!");
+                return;
+            }
+
+            statusText.classList.remove('hidden');
+            uploadBtn.disabled = true;
+            uploadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            let successCount = 0;
+
+            // วนลูปส่งทีละรูป
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                progressCount.textContent = `กำลังอัปโหลดรูปที่ ${i + 1}/${files.length} ...`;
+
+                try {
+                    const base64String = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+
+                    const fileName = `upload_${Date.now()}_${file.name}`;
+                    const newPhotoRef = push(ref(db, 'photos'));
+                    
+                    await set(newPhotoRef, {
+                        fileName: fileName,
+                        base64: base64String,
+                        targetFolders: selectedFolders, // ส่งชื่อโฟลเดอร์ไปเป็น Array
+                        timestamp: Date.now()
+                    });
+                    
+                    successCount++;
+                } catch (error) {
+                    console.error("❌ Error ส่งรูป:", error);
+                }
+            }
+
+            statusText.classList.add('hidden');
+            uploadBtn.disabled = false;
+            uploadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            if (successCount === files.length) {
+                alert(`✅ ส่ง ${successCount} รูป ไปยังโฟลเดอร์ [${selectedFolders.join(', ')}] สำเร็จแล้วครับ!`);
+                fileInput.value = "";
+                fileNameDisplay.textContent = "ยังไม่ได้เลือกไฟล์...";
+            }
+        });
+    </script>
+</body>
+</html>
