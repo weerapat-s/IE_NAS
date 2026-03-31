@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IE_NAS MONITOR</title>
+    <title>IE_NAS MONITO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
         body { background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .glass-panel { background-color: #1e293b; border-radius: 0.75rem; border: 1px solid #334155; padding: 1.5rem; }
@@ -18,6 +19,29 @@
             <i class="fas fa-server mr-2"></i>IE_NAS MONITO
         </h1>
         <p class="text-gray-400 mt-2 text-sm md:text-base">Student ID: 68030271 | KMITL Computer Tech</p>
+        <div class="mt-3">
+            <span class="px-3 py-1 bg-teal-900 text-teal-300 rounded-full text-xs border border-teal-500 font-semibold tracking-wider">
+                NAS Online
+            </span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="glass-panel border-t-4 border-t-blue-500">
+            <h3 class="text-xs text-gray-500 mb-2 font-bold tracking-wider">CPU USAGE</h3>
+            <div class="text-4xl font-bold text-white mb-4">14.95%</div>
+            <div class="w-full bg-slate-700 h-1.5 rounded-full"><div class="bg-blue-500 h-1.5 rounded-full" style="width: 15%"></div></div>
+        </div>
+        <div class="glass-panel border-t-4 border-t-green-500">
+            <h3 class="text-xs text-gray-500 mb-2 font-bold tracking-wider">FREE MEMORY</h3>
+            <div class="text-4xl font-bold text-white mb-4">83.97%</div>
+            <div class="w-full bg-slate-700 h-1.5 rounded-full"><div class="bg-green-500 h-1.5 rounded-full" style="width: 84%"></div></div>
+        </div>
+        <div class="glass-panel border-t-4 border-t-yellow-500">
+            <h3 class="text-xs text-gray-500 mb-2 font-bold tracking-wider">SYSTEM UPTIME (HR)</h3>
+            <div class="text-4xl font-bold text-white mb-4">2.22</div>
+            <div class="text-xs text-gray-600 italic">Precision Tower 5810 Status</div>
+        </div>
     </div>
 
     <div class="glass-panel border border-slate-700">
@@ -28,13 +52,15 @@
             <h2 class="text-xl font-bold text-white">Smart NAS Uploader</h2>
         </div>
         
-        <div class="mb-4">
-            <label class="block text-gray-400 text-sm font-bold mb-2" for="folderSelect">
-                เลือกโฟลเดอร์ปลายทางใน NAS:
+        <div class="mb-5">
+            <label class="block text-gray-400 text-sm font-bold mb-3">
+                เลือกโฟลเดอร์ปลายทางใน NAS (เลือกได้มากกว่า 1 โฟลเดอร์):
             </label>
-            <select id="folderSelect" class="w-full md:w-1/3 bg-slate-700 border border-slate-600 text-white rounded p-2 focus:outline-none focus:border-blue-500">
-                <option value="General">กำลังดึงข้อมูลจาก NAS...</option>
-            </select>
+            <div id="folderContainer" class="flex flex-wrap gap-3 p-4 bg-slate-800 border border-slate-600 rounded-lg min-h-[60px]">
+                <span class="text-gray-500 text-sm flex items-center">
+                    <i class="fas fa-spinner fa-spin mr-2"></i> กำลังดึงข้อมูลโฟลเดอร์จาก NAS...
+                </span>
+            </div>
         </div>
 
         <div class="bg-slate-800 border border-slate-700 rounded-lg p-2 md:p-4 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -59,124 +85,4 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
-        // Config ฐานข้อมูล
-        const firebaseConfig = {
-            apiKey: "AIzaSyA0-Sr2BDm0MGVFoxzgF6T9bcPNfF1yCgU",
-            authDomain: "ienas-cloud.firebaseapp.com",
-            databaseURL: "https://ienas-cloud-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "ienas-cloud"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // ดึง Element ต่างๆ ในหน้าเว็บ
-        const fileInput = document.getElementById('photoInput');
-        const chooseBtn = document.getElementById('chooseBtn');
-        const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const statusText = document.getElementById('statusText');
-        const progressCount = document.getElementById('progressCount');
-        const folderSelect = document.getElementById('folderSelect');
-
-        // ==========================================
-        // 🌟 ฟีเจอร์: ดึงรายชื่อโฟลเดอร์จาก NAS มาแสดง
-        // ==========================================
-        onValue(ref(db, 'folderList'), (snapshot) => {
-            const folders = snapshot.val(); 
-            
-            if (folders && Array.isArray(folders)) {
-                folderSelect.innerHTML = ''; 
-                folders.forEach(folder => {
-                    const option = document.createElement('option');
-                    option.value = folder;
-                    option.textContent = `📁 ${folder}`;
-                    folderSelect.appendChild(option);
-                });
-            } else {
-                folderSelect.innerHTML = '<option value="General">📂 General</option>';
-            }
-        });
-
-        // ==========================================
-        // 🌟 ฟีเจอร์: จัดการการเลือกรูปภาพ
-        // ==========================================
-        chooseBtn.addEventListener('click', () => fileInput.click());
-
-        fileInput.addEventListener('change', () => {
-            const fileCount = fileInput.files.length;
-            if (fileCount > 0) {
-                fileNameDisplay.textContent = `เลือกแล้ว ${fileCount} ไฟล์ (เตรียมลงโฟลเดอร์ ${folderSelect.value})`;
-            } else {
-                fileNameDisplay.textContent = "ยังไม่ได้เลือกไฟล์...";
-            }
-        });
-
-        folderSelect.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                fileNameDisplay.textContent = `เลือกแล้ว ${fileInput.files.length} ไฟล์ (เตรียมลงโฟลเดอร์ ${folderSelect.value})`;
-            }
-        });
-
-        // ==========================================
-        // 🌟 ฟีเจอร์: อัปโหลดรูปภาพทีละหลายรูป
-        // ==========================================
-        uploadBtn.addEventListener('click', async () => {
-            const files = fileInput.files;
-            const targetFolder = folderSelect.value;
-            
-            if (files.length === 0) {
-                alert("กรุณาเลือกรูปก่อนครับ!");
-                return;
-            }
-
-            statusText.classList.remove('hidden');
-            uploadBtn.disabled = true;
-            uploadBtn.classList.add('opacity-50');
-
-            let successCount = 0;
-
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                progressCount.textContent = `กำลังอัปโหลดรูปที่ ${i + 1} จาก ${files.length}...`;
-
-                try {
-                    const base64String = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => resolve(e.target.result);
-                        reader.readAsDataURL(file);
-                    });
-
-                    const fileName = `upload_${Date.now()}_${file.name}`;
-                    const newPhotoRef = push(ref(db, 'photos'));
-                    
-                    await set(newPhotoRef, {
-                        fileName: fileName,
-                        base64: base64String,
-                        folderName: targetFolder, 
-                        timestamp: Date.now()
-                    });
-                    
-                    successCount++;
-                } catch (error) {
-                    console.error("❌ Error ส่งรูปที่", i+1, error);
-                }
-            }
-
-            statusText.classList.add('hidden');
-            uploadBtn.disabled = false;
-            uploadBtn.classList.remove('opacity-50');
-            
-            if (successCount === files.length) {
-                alert(`✅ อัปโหลดสำเร็จทั้ง ${successCount} รูป! กำลังส่งเข้า NAS โฟลเดอร์ ${targetFolder}`);
-                fileInput.value = "";
-                fileNameDisplay.textContent = "ยังไม่ได้เลือกไฟล์...";
-            } else {
-                alert(`⚠️ อัปโหลดสำเร็จ ${successCount}/${files.length} รูป (เช็คอินเทอร์เน็ต)`);
-            }
-        });
-    </script>
-</body>
-</html>
+        import { getDatabase, ref, push
