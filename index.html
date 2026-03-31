@@ -1,144 +1,58 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IE NAS Monitoring | 68030271</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap');
-        body { font-family: 'Space Grotesk', sans-serif; background-color: #0f172a; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-    </style>
-</head>
-<body class="text-slate-200 min-h-screen p-4 md:p-8">
+<script type="module">
+  // นำเข้า Firebase
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-        <div>
-            <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent uppercase">
-                <i class="fa-solid fa-server mr-2"></i>Precision 5810 Monitor
-            </h1>
-            <p class="text-slate-400 text-sm mt-1">Student ID: <span class="text-blue-400 font-mono">68030271</span> | KMITL Computer Tech</p>
-        </div>
-        <div id="status-badge" class="px-4 py-1 rounded-full bg-red-500/20 text-red-400 border border-red-500/50 text-xs animate-pulse">
-            Connecting...
-        </div>
-    </div>
+  // Config ของโปรเจกต์คุณวีระภัทร
+  const firebaseConfig = {
+    apiKey: "AIzaSyA0-Sr2BDm0MGVFoxzgF6T9bcPNfF1yCgU",
+    authDomain: "ienas-cloud.firebaseapp.com",
+    databaseURL: "https://ienas-cloud-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "ienas-cloud"
+  };
 
-    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div class="glass-card p-6 rounded-3xl border-t-4 border-t-blue-500">
-            <p class="text-xs text-slate-500 uppercase mb-2">CPU Usage</p>
-            <h2 id="cpu-val" class="text-5xl font-bold mb-4">0%</h2>
-            <div class="w-full bg-slate-700 rounded-full h-1.5"><div id="cpu-bar" class="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div></div>
-        </div>
-        <div class="glass-card p-6 rounded-3xl border-t-4 border-t-emerald-500">
-            <p class="text-xs text-slate-500 uppercase mb-2">Free Memory</p>
-            <h2 id="mem-val" class="text-5xl font-bold mb-4">0%</h2>
-            <div class="w-full bg-slate-700 rounded-full h-1.5"><div id="mem-bar" class="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div></div>
-        </div>
-        <div class="glass-card p-6 rounded-3xl border-t-4 border-t-amber-500">
-            <p class="text-xs text-slate-500 uppercase mb-2">System Uptime (Hr)</p>
-            <h2 id="uptime-val" class="text-5xl font-bold mb-4">0.00</h2>
-            <p class="text-slate-500 text-[10px] italic">Precision Tower 5810 Status</p>
-        </div>
-    </div>
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-    <div class="max-w-6xl mx-auto p-8 glass-card rounded-3xl border border-slate-700 shadow-2xl">
-        <div class="flex items-center gap-3 mb-6">
-            <div class="p-3 bg-blue-500/20 rounded-xl text-blue-400"><i class="fa-solid fa-cloud-arrow-up text-xl"></i></div>
-            <h3 class="text-xl font-bold">NAS Cloud Photo Upload</h3>
-        </div>
+  // ฟังก์ชันอัปโหลด (ผูกกับปุ่ม Upload to NAS ของคุณ)
+  window.uploadToNAS = function() {
+    // ดึงไฟล์จาก Input (แก้ไอดีให้ตรงกับ input ของคุณ ถ้าไม่ใช่ photoInput)
+    const fileInput = document.getElementById('photoInput'); // ⚠️ เช็ค ID ตรงนี้ให้ตรงกับในเว็บคุณนะครับ
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert("กรุณาเลือกรูปก่อนครับ!");
+        return;
+    }
 
-        <div class="flex flex-col md:flex-row gap-4 items-center bg-slate-900/50 p-6 rounded-2xl border border-slate-700/50">
-            <input type="file" id="photo-input" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer" accept="image/*">
-            <button id="upload-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-10 py-3 rounded-full font-bold shadow-lg transition-all active:scale-95 whitespace-nowrap">
-                Upload to NAS
-            </button>
-        </div>
-        
-        <div id="status-msg" class="mt-4 text-center text-sm font-mono text-blue-400"></div>
-    </div>
+    // เปลี่ยนข้อความปุ่ม หรือแสดงสถานะว่ากำลังโหลด
+    console.log("⏳ กำลังแปลงรูปภาพเป็นโค้ด Base64...");
+    
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const base64String = e.target.result; 
+        const fileName = `upload_${Date.now()}_${file.name}`;
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        // ✅ Firebase Config ของคุณวีระภัทร
-        const firebaseConfig = {
-            apiKey: "AIzaSyA0-Sr2BDm0MGVFoxzgF6T9bcPNfF1yCgU",
-            authDomain: "ienas-cloud.firebaseapp.com",
-            databaseURL: "https://ienas-cloud-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "ienas-cloud",
-            storageBucket: "ienas-cloud.firebasestorage.app",
-            messagingSenderId: "815356084214",
-            appId: "1:815356084214:web:64469dcc82dad071c851d7"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // 📈 ส่วนที่ 1: ดึงค่า CPU/RAM จาก Firebase
-        onValue(ref(db, 'nas_status'), (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                document.getElementById('cpu-val').innerText = data.cpu_usage;
-                document.getElementById('cpu-bar').style.width = data.cpu_usage;
-                document.getElementById('mem-val').innerText = data.free_mem;
-                document.getElementById('mem-bar').style.width = data.free_mem;
-                document.getElementById('uptime-val').innerText = data.uptime_hr;
-
-                const badge = document.getElementById('status-badge');
-                badge.innerText = "NAS Online";
-                badge.classList.remove('bg-red-500/20', 'text-red-400', 'animate-pulse');
-                badge.classList.add('bg-emerald-500/20', 'text-emerald-400');
-            }
-        });
-
-        // 📸 ส่วนที่ 2: ระบบอัปโหลดรูปภาพ (ใช้ ImgBB เป็นทางผ่าน)
-        // ⚠️ อย่าลืมใส่ API Key จากเว็บ ImgBB ของคุณตรงนี้นะครับ!
-        const IMGBB_API_KEY = "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"; 
-        const uploadBtn = document.getElementById('upload-btn');
-        const statusMsg = document.getElementById('status-msg');
-
-        uploadBtn.onclick = async () => {
-            const file = document.getElementById('photo-input').files[0];
-            if (!file) return alert("กรุณาเลือกรูปก่อนครับ!");
-
-            uploadBtn.disabled = true;
-            uploadBtn.innerText = "Uploading...";
-            statusMsg.innerText = "🔄 กำลังส่งรูปเข้าระบบ Cloud...";
-
-            const formData = new FormData();
-            formData.append("image", file);
-
-            try {
-                // ส่งไป ImgBB
-                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
-                const json = await res.json();
-                
-                if (json.success) {
-                    const url = json.data.url;
-                    statusMsg.innerText = "✅ รูปถึง Cloud แล้ว! กำลังเรียก NAS ให้มารับรูป...";
-                    
-                    // ส่งสัญญาณให้เครื่อง NAS (app.js จะเห็นข้อมูลนี้แล้วโหลดรูปลงเครื่อง)
-                    const newPhotoRef = push(ref(db, 'photos'));
-                    await set(newPhotoRef, {
-                        url: url,
-                        timestamp: Date.now(),
-                        studentId: "68030271"
-                    });
-
-                    statusMsg.innerText = "🚀 สำเร็จ! รูปจะไปโผล่ใน CasaOS ของคุณในไม่ช้า";
-                    alert("อัปโหลดสำเร็จ! รูปกำลังเดินทางไปที่เครื่อง Precision 5810 ครับ");
-                }
-            } catch (e) {
-                statusMsg.innerText = "❌ เกิดข้อผิดพลาด: " + e.message;
-            } finally {
-                uploadBtn.disabled = false;
-                uploadBtn.innerText = "Upload to NAS";
-            }
-        };
-    </script>
-</body>
-</html>
+        try {
+            console.log("☁️ กำลังส่งข้อมูลเข้า Firebase Realtime Database...");
+            const newPhotoRef = push(ref(db, 'photos'));
+            
+            // โยนเข้า Firebase ตรงๆ
+            await set(newPhotoRef, {
+                fileName: fileName,
+                base64: base64String,
+                timestamp: Date.now()
+            });
+            
+            alert("✅ อัปโหลดสำเร็จ! NAS กำลังดูดรูปลงเครื่องครับ");
+            
+        } catch (error) {
+            console.error("❌ Error ตอนส่งเข้า Firebase:", error);
+            alert("อัปโหลดไม่สำเร็จ เช็ค Permission ของ Database ครับ");
+        }
+    };
+    
+    // เริ่มอ่านไฟล์
+    reader.readAsDataURL(file);
+  }
+</script>
