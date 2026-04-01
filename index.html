@@ -205,7 +205,7 @@
 
         .card-body { padding: 28px; }
 
-        /* ─── FOLDER LIST ─── */
+        /* ─── FOLDER LIST & NEW FOLDER INPUT ─── */
         .folder-section-label {
             font-size: 9px;
             letter-spacing: 0.2em;
@@ -220,7 +220,7 @@
             gap: 8px;
             min-height: 44px;
             align-items: center;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
         }
 
         #folderContainer label {
@@ -262,6 +262,28 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        /* 🌟 CSS กล่องสร้างโฟลเดอร์ใหม่ 🌟 */
+        .new-folder-input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            margin-bottom: 28px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .new-folder-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-dim);
+        }
+        .new-folder-input::placeholder {
+            color: var(--text-muted);
         }
 
         /* ─── UPLOAD ROW ─── */
@@ -373,7 +395,6 @@
 </head>
 <body>
 
-    <!-- HEADER -->
     <div class="header">
         <div class="header-top">
             <div>
@@ -385,7 +406,6 @@
         </div>
     </div>
 
-    <!-- STATS -->
     <div class="stats-grid">
         <div class="stat-card blue">
             <div class="stat-label">CPU Usage</div>
@@ -404,7 +424,6 @@
         </div>
     </div>
 
-    <!-- UPLOADER CARD -->
     <div class="uploader-card">
         <div class="card-header">
             <div class="card-icon">⬆</div>
@@ -415,13 +434,17 @@
         </div>
 
         <div class="card-body">
-            <div class="folder-section-label">เลือกโฟลเดอร์ปลายทาง</div>
+            
+            <div class="folder-section-label">เลือกโฟลเดอร์ที่มีอยู่</div>
             <div id="folderContainer">
                 <span class="loading-text">
                     <span class="spinner"></span>
                     กำลังดึงข้อมูลโฟลเดอร์...
                 </span>
             </div>
+
+            <div class="folder-section-label">หรือพิมพ์ชื่อโฟลเดอร์ใหม่</div>
+            <input type="text" id="newFolderName" class="new-folder-input" placeholder="พิมพ์ชื่อโฟลเดอร์ที่ต้องการสร้างใหม่...">
 
             <div class="divider"></div>
 
@@ -460,6 +483,7 @@
         const uploadBtn = document.getElementById('uploadBtn');
         const statusText = document.getElementById('statusText');
         const progressCount = document.getElementById('progressCount');
+        const newFolderInput = document.getElementById('newFolderName'); // ตัวแปรใหม่
 
         // Animate stat bars on load
         window.addEventListener('load', () => {
@@ -508,10 +532,18 @@
 
         uploadBtn.addEventListener('click', async () => {
             const files = fileInput.files;
+            
+            // 🌟 รวบรวมข้อมูลโฟลเดอร์จาก Checkbox และ ช่องพิมพ์ใหม่
             const selectedFolders = Array.from(document.querySelectorAll('.folder-checkbox:checked')).map(cb => cb.value);
+            const newFolderName = newFolderInput.value.trim();
+            
+            let finalFolders = [...selectedFolders];
+            if (newFolderName) {
+                finalFolders.push(newFolderName); // ยัดชื่อโฟลเดอร์ใหม่เข้าไป
+            }
 
             if (files.length === 0) { alert('กรุณาเลือกรูปก่อนครับ!'); return; }
-            if (selectedFolders.length === 0) { alert('กรุณาเลือกโฟลเดอร์ปลายทางก่อนครับ!'); return; }
+            if (finalFolders.length === 0) { alert('กรุณาเลือกโฟลเดอร์ปลายทาง หรือพิมพ์ชื่อโฟลเดอร์ใหม่ก่อนครับ!'); return; }
 
             statusText.classList.add('visible');
             uploadBtn.disabled = true;
@@ -530,7 +562,7 @@
                     await set(newPhotoRef, {
                         fileName: `upload_${Date.now()}_${file.name}`,
                         base64: base64String,
-                        targetFolders: selectedFolders,
+                        targetFolders: finalFolders, // 🌟 ส่ง Array โฟลเดอร์ที่รวมอันใหม่แล้ว
                         timestamp: Date.now()
                     });
                     successCount++;
@@ -540,8 +572,9 @@
             statusText.classList.remove('visible');
             uploadBtn.disabled = false;
             if (successCount === files.length) {
-                alert(`✅ ส่ง ${successCount} รูป → [${selectedFolders.join(', ')}] สำเร็จ!`);
+                alert(`✅ ส่ง ${successCount} รูป → [${finalFolders.join(', ')}] สำเร็จ!`);
                 fileInput.value = '';
+                newFolderInput.value = ''; // เคลียร์ช่องพิมพ์หลังจากอัปโหลดเสร็จ
                 fileNameDisplay.textContent = 'ยังไม่ได้เลือกไฟล์';
                 fileNameDisplay.classList.remove('has-file');
             }
